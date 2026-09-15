@@ -486,18 +486,25 @@ function aggiornaDataAgendaVisibile() {
     : '';
 }
 
+let aperturaDataInCorso = false;
+
 function apriSelettoreDataAgenda() {
-  if (typeof agendaSelettoreData.showPicker === 'function') {
-    agendaSelettoreData.showPicker();
-  } else {
-    agendaSelettoreData.focus();
+  if (aperturaDataInCorso) return;
+  aperturaDataInCorso = true;
+  try {
+    if (typeof agendaSelettoreData.showPicker === 'function') {
+      agendaSelettoreData.showPicker();
+    } else {
+      agendaSelettoreData.click();
+    }
+  } finally {
+    setTimeout(() => {
+      aperturaDataInCorso = false;
+    }, 0);
   }
 }
 
-agendaDataVisibile.addEventListener('click', apriSelettoreDataAgenda);
-agendaDataVisibile.parentElement.addEventListener('click', evento => {
-  if (evento.target !== agendaSelettoreData) apriSelettoreDataAgenda();
-});
+agendaDataVisibile.parentElement.addEventListener('click', apriSelettoreDataAgenda);
 
 function getTurniAgenda(row, data) {
   const giorno = getGiornoSettimana(data);
