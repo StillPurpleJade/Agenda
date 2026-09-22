@@ -486,26 +486,6 @@ function aggiornaDataAgendaVisibile() {
     : '';
 }
 
-let aperturaDataInCorso = false;
-
-function apriSelettoreDataAgenda() {
-  if (aperturaDataInCorso) return;
-  aperturaDataInCorso = true;
-  try {
-    if (typeof agendaSelettoreData.showPicker === 'function') {
-      agendaSelettoreData.showPicker();
-    } else {
-      agendaSelettoreData.click();
-    }
-  } finally {
-    setTimeout(() => {
-      aperturaDataInCorso = false;
-    }, 0);
-  }
-}
-
-agendaDataVisibile.parentElement.addEventListener('click', apriSelettoreDataAgenda);
-
 function getTurniAgenda(row, data) {
   const giorno = getGiornoSettimana(data);
   const base = row._dati.giorni[giorno] || row._dati.turni;

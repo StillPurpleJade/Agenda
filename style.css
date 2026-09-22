@@ -15,18 +15,33 @@ body {
   display: flex;
   align-items: center;
   justify-content: center;
-  gap: 10px;
   padding: 12px 16px;
   background: #111827;
 }
 
-.app-header img {
+.app-brand {
+  position: relative;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.app-version {
+  position: absolute;
+  top: -7px;
+  left: -8px;
+  color: #9ca3af;
+  font-size: 10px;
+  line-height: 1;
+}
+
+.app-brand img {
   width: 44px;
   height: 44px;
   object-fit: contain;
 }
 
-.app-header h1 {
+.app-brand h1 {
   color: #d4af37;
   font-size: 22px;
 }
@@ -128,11 +143,20 @@ body {
 }
 
 .col-giorno input[type="date"] {
-  position: absolute;
-  inset: 0;
-  width: 100%;
-  opacity: 0;
-  pointer-events: none;
+  position: relative;
+  display: block;
+  width: 130px;
+  height: 26px;
+  padding: 4px 8px;
+  background: #2a2a2a;
+  border: 1px solid #666;
+  color: #fff;
+  font-size: 14px;
+  font-weight: bold;
+  text-align: center;
+  opacity: 1;
+  cursor: pointer;
+  pointer-events: auto;
 }
 
 .selettore-data-agenda {
@@ -142,17 +166,7 @@ body {
 }
 
 .col-giorno #agenda-data-visibile {
-  position: relative;
-  width: 130px;
-  padding: 4px 8px;
-  background: #2a2a2a;
-  border: 1px solid #666;
-  color: #fff;
-  font-size: 14px;
-  font-weight: bold;
-  text-align: center;
-  cursor: pointer;
-  pointer-events: none;
+  display: none;
 }
 
 .sr-only {
