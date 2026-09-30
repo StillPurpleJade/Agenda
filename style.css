@@ -122,6 +122,19 @@ body {
   cursor: not-allowed;
 }
 
+#agenda-btn-completa-giorno:disabled {
+  background: #444;
+  border-color: #555;
+  color: #999;
+  opacity: 0.45;
+}
+
+.btn-salva-ordine.giorno-completato {
+  background: #d4af37;
+  border-color: #f3d56b;
+  color: #1a1a1a;
+}
+
 .col-giorno select {
   padding: 4px 8px;
   background: #2a2a2a;
@@ -159,10 +172,58 @@ body {
   pointer-events: auto;
 }
 
-.selettore-data-agenda {
-  position: relative;
-  display: inline-block;
+.col-giorno input[type="date"].agenda-giorno-non-completato::-webkit-datetime-edit-day-field {
+  color: #ef4444;
+}
+
+.agenda-avviso-giorni {
+  max-width: 280px;
+  margin-top: 5px;
+  color: #ef4444;
+  font-size: 11px;
+  font-weight: bold;
+  line-height: 1.4;
+  white-space: normal;
+}
+
+.agenda-avviso-giorni[hidden] {
+  display: none;
+}
+
+.agenda-giorno-da-completare {
+  margin: 0 2px;
+  padding: 0;
+  background: none;
+  border: 0;
+  color: inherit;
+  font: inherit;
+  text-decoration: underline;
   cursor: pointer;
+}
+
+.selettore-data-agenda {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  cursor: pointer;
+}
+
+.agenda-naviga-giorno {
+  width: 30px;
+  height: 26px;
+  padding: 0;
+  background: #2a2a2a;
+  border: 1px solid #666;
+  border-radius: 3px;
+  color: #fff;
+  font-size: 16px;
+  font-weight: bold;
+  line-height: 1;
+  cursor: pointer;
+}
+
+.agenda-naviga-giorno:hover {
+  background: #3a3a3a;
 }
 
 .col-giorno #agenda-data-visibile {
@@ -452,6 +513,17 @@ body {
   margin-bottom: 12px;
 }
 
+.riepilogo-giorni-non-completati {
+  margin: 0 0 10px;
+  color: #ef4444;
+  font-size: 13px;
+  font-weight: bold;
+}
+
+.riepilogo-giorni-non-completati[hidden] {
+  display: none;
+}
+
 .riepilogo-controlli button,
 .riepilogo-controlli input {
   padding: 6px 10px;
@@ -503,6 +575,18 @@ body {
 .riepilogo-table th {
   background: #2a2a2a;
   color: #ccc;
+}
+
+.riepilogo-table th.riepilogo-giorno-da-completare {
+  color: #ef4444;
+  font-weight: bold;
+}
+
+.riepilogo-table .riepilogo-scroll-spacer {
+  width: max(0px, calc(100vw - 330px));
+  min-width: 0 !important;
+  padding: 0;
+  border: 0;
 }
 
 .riepilogo-nome-fisso {

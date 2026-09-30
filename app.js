@@ -18,11 +18,16 @@ const selettoreGiorno = document.getElementById('selettore-giorno');
 const btnAggiungiTuttiGiorni = document.getElementById('btn-aggiungi-tutti-giorni');
 const agendaBody = document.getElementById('agenda-body');
 const agendaSelettoreOrdinamento = document.getElementById('agenda-selettore-ordinamento');
-const agendaBtnSalvaOrdine = document.getElementById('agenda-btn-salva-ordine');
+const agendaBtnCompletaGiorno = document.getElementById('agenda-btn-completa-giorno');
 const agendaSelettoreData = document.getElementById('agenda-selettore-data');
 const agendaDataVisibile = document.getElementById('agenda-data-visibile');
+const agendaAvvisoGiorni = document.getElementById('agenda-avviso-giorni');
+const agendaGiornoPrecedente = document.getElementById('agenda-giorno-precedente');
+const agendaGiornoSuccessivo = document.getElementById('agenda-giorno-successivo');
 const riepilogoMese = document.getElementById('riepilogo-mese');
 const riepilogoMeseVisibile = document.getElementById('riepilogo-mese-visibile');
+const riepilogoGiorniNonCompletati = document.getElementById('riepilogo-giorni-non-completati');
+const riepilogo = document.getElementById('riepilogo');
 const riepilogoMesePrecedente = document.getElementById('riepilogo-mese-precedente');
 const riepilogoMeseSuccessivo = document.getElementById('riepilogo-mese-successivo');
 const riepilogoHead = document.getElementById('riepilogo-head');
@@ -47,11 +52,22 @@ const ORDER_KEY = 'ore-lavoro-ordinamento';
 const CUSTOM_ORDER_KEY = 'ore-lavoro-ordine-personalizzato';
 const DAY_KEY = 'ore-lavoro-giorno';
 const AGENDA_DATE_KEY = 'ore-lavoro-data-agenda';
+const COMPLETED_DAYS_KEY = 'agenda-giorni-completati';
 let prossimoId = 1;
 let ordinePersonalizzato = [];
 let popupAssenzaContesto = null;
 let suggerimentiAssenza = [];
+let giorniCompletati = new Set();
 const SUGGESTIONS_KEY = 'workhour-suggerimenti-assenza';
+
+try {
+  const giorniCompletatiSalvati = JSON.parse(localStorage.getItem(COMPLETED_DAYS_KEY) || '[]');
+  if (Array.isArray(giorniCompletatiSalvati)) {
+    giorniCompletati = new Set(giorniCompletatiSalvati.filter(data => /^\d{4}-\d{2}-\d{2}$/.test(data)));
+  }
+} catch (error) {
+  console.error('Impossibile caricare i giorni completati:', error);
+}
 
 try {
   const suggerimentiSalvati = JSON.parse(localStorage.getItem(SUGGESTIONS_KEY) || '[]');
@@ -170,6 +186,12 @@ function aggiornaDatiDaImportazione(datiImportati) {
     suggerimentiAssenza = [...new Set([...suggerimentiAssenza, ...datiImportati.suggerimenti])];
     salvaSuggerimentiAssenza();
   }
+  if (Array.isArray(datiImportati.giorniCompletati)) {
+    datiImportati.giorniCompletati
+      .filter(data => typeof data === 'string' && data.startsWith(`${mese}-`) && /^\d{4}-\d{2}-\d{2}$/.test(data))
+      .forEach(data => giorniCompletati.add(data));
+    salvaGiorniCompletati();
+  }
   riepilogoMese.value = mese;
   aggiornaMeseRiepilogoVisibile();
   salvaDipendenti();
@@ -187,15 +209,16 @@ function esportaMese() {
     assenze: Object.fromEntries(Object.entries(row._dati.assenze).filter(([data]) => data.startsWith(`${mese}-`)))
   }));
   const file = new Blob([JSON.stringify({
-    formato: 'workhour-mese',
+    formato: 'agenda-mese',
     versione: 2,
     mese,
     dipendenti,
+    giorniCompletati: [...giorniCompletati].filter(data => data.startsWith(`${mese}-`)),
     suggerimenti: suggerimentiAssenza
   }, null, 2)], { type: 'application/json' });
   const link = document.createElement('a');
   link.href = URL.createObjectURL(file);
-  link.download = `workhour-${mese}.json`;
+  link.download = `agenda-${mese}.json`;
   link.click();
   URL.revokeObjectURL(link.href);
 }
@@ -239,6 +262,7 @@ function aggiornaMeseRiepilogoVisibile() {
 function aggiornaRiepilogo() {
   if (!riepilogoMese || !riepilogoMese.value) return;
   aggiornaMeseRiepilogoVisibile();
+  aggiornaAvvisoRiepilogoGiorniNonCompletati();
   const [anno, mese] = riepilogoMese.value.split('-').map(Number);
   const giorniNelMese = new Date(anno, mese, 0).getDate();
   riepilogoHead.innerHTML = '';
@@ -252,12 +276,21 @@ function aggiornaRiepilogo() {
   for (let giorno = 1; giorno <= giorniNelMese; giorno += 1) {
     const th = document.createElement('th');
     th.textContent = String(giorno);
+    const data = dataDaMese(riepilogoMese.value, giorno);
+    th.dataset.data = data;
+    if (!giorniCompletati.has(data) && data <= getDataOggi()) {
+      th.classList.add('riepilogo-giorno-da-completare');
+    }
     intestazione.appendChild(th);
   }
   const totaleHeader = document.createElement('th');
   totaleHeader.textContent = 'TOTALE';
   totaleHeader.className = 'riepilogo-totale-fisso';
   intestazione.appendChild(totaleHeader);
+  const spazioScorrimentoHeader = document.createElement('th');
+  spazioScorrimentoHeader.className = 'riepilogo-scroll-spacer';
+  spazioScorrimentoHeader.setAttribute('aria-hidden', 'true');
+  intestazione.appendChild(spazioScorrimentoHeader);
   riepilogoHead.appendChild(intestazione);
 
   dipBody.querySelectorAll('.dip-row').forEach(row => {
@@ -304,8 +337,13 @@ function aggiornaRiepilogo() {
       totaleCell.appendChild(valore);
     });
     tr.appendChild(totaleCell);
+    const spazioScorrimento = document.createElement('td');
+    spazioScorrimento.className = 'riepilogo-scroll-spacer';
+    spazioScorrimento.setAttribute('aria-hidden', 'true');
+    tr.appendChild(spazioScorrimento);
     riepilogoBody.appendChild(tr);
   });
+  portaRiepilogoAlGiornoOggi();
 }
 
 // Calcola ore da "HH:MM" a minuti
@@ -475,15 +513,156 @@ function getDataAgenda() {
   return agendaSelettoreData.value;
 }
 
+function getDataOggi() {
+  const oggi = new Date();
+  return `${oggi.getFullYear()}-${String(oggi.getMonth() + 1).padStart(2, '0')}-${String(oggi.getDate()).padStart(2, '0')}`;
+}
+
 function formattaDataAgenda(data) {
   const [anno, mese, giorno] = data.split('-');
   return `${giorno}/${mese}/${anno}`;
+}
+
+function getGiorniNonCompletatiDelMese(meseSelezionato) {
+  const meseCorrente = getDataOggi().slice(0, 7);
+  if (meseSelezionato > meseCorrente) return [];
+  const [anno, mese] = meseSelezionato.split('-').map(Number);
+  const giorniNelMese = new Date(anno, mese, 0).getDate();
+  const giorniDaCompletare = [];
+  for (let giorno = 1; giorno <= giorniNelMese; giorno += 1) {
+    const data = dataDaMese(meseSelezionato, giorno);
+    if (data <= getDataOggi() && !giorniCompletati.has(data)) {
+      giorniDaCompletare.push(data);
+    }
+  }
+  return giorniDaCompletare;
+}
+
+function getGiorniDaCompletareDelMeseAgenda() {
+  const dataSelezionata = getDataAgenda();
+  if (!dataSelezionata) return [];
+  return getGiorniNonCompletatiDelMese(dataSelezionata.slice(0, 7));
+}
+
+function aggiornaAvvisoRiepilogoGiorniNonCompletati() {
+  const giorni = getGiorniNonCompletatiDelMese(riepilogoMese.value);
+  riepilogoGiorniNonCompletati.hidden = giorni.length === 0;
+  if (giorni.length === 0) {
+    riepilogoGiorniNonCompletati.textContent = '';
+    return;
+  }
+  const etichettaGiorni = giorni.length === 1 ? 'giorno non completato' : 'giorni non completati';
+  const elencoGiorni = giorni.map(data => formattaDataAgenda(data).slice(0, 2)).join(', ');
+  riepilogoGiorniNonCompletati.textContent =
+    `${giorni.length} ${etichettaGiorni}: ${elencoGiorni}`;
 }
 
 function aggiornaDataAgendaVisibile() {
   agendaDataVisibile.value = agendaSelettoreData.value
     ? formattaDataAgenda(agendaSelettoreData.value)
     : '';
+  aggiornaStatoGiornoCompletato();
+  aggiornaAvvisoGiorniDaCompletare();
+}
+
+function aggiornaAvvisoGiorniDaCompletare() {
+  const giorniMancanti = getGiorniDaCompletareDelMeseAgenda();
+  agendaAvvisoGiorni.replaceChildren();
+  agendaAvvisoGiorni.hidden = giorniMancanti.length === 0;
+  agendaSelettoreData.classList.toggle(
+    'agenda-giorno-non-completato',
+    agendaSelettoreData.value <= getDataOggi() && !giorniCompletati.has(agendaSelettoreData.value)
+  );
+  if (giorniMancanti.length === 0) return;
+
+  agendaAvvisoGiorni.append('! Giorni da completare: ');
+  giorniMancanti.forEach((data, indice) => {
+    const linkGiorno = document.createElement('button');
+    linkGiorno.type = 'button';
+    linkGiorno.className = 'agenda-giorno-da-completare';
+    const isOggi = data === getDataOggi();
+    linkGiorno.textContent = isOggi ? 'oggi' : formattaDataAgenda(data).slice(0, 2);
+    linkGiorno.setAttribute('aria-label', isOggi ? 'Apri oggi' : `Apri il ${formattaDataAgenda(data)}`);
+    linkGiorno.addEventListener('click', () => impostaDataAgenda(data));
+    agendaAvvisoGiorni.append(linkGiorno);
+    if (indice < giorniMancanti.length - 1) agendaAvvisoGiorni.append(', ');
+  });
+}
+
+function impostaDataAgenda(data) {
+  agendaSelettoreData.value = data;
+  localStorage.setItem(AGENDA_DATE_KEY, data);
+  aggiornaDataAgendaVisibile();
+  aggiornaAgenda();
+}
+
+function spostaDataAgenda(giorni) {
+  const [anno, mese, giorno] = getDataAgenda().split('-').map(Number);
+  const data = new Date(anno, mese - 1, giorno, 12);
+  data.setDate(data.getDate() + giorni);
+  impostaDataAgenda([
+    data.getFullYear(),
+    String(data.getMonth() + 1).padStart(2, '0'),
+    String(data.getDate()).padStart(2, '0')
+  ].join('-'));
+}
+
+function portaRiepilogoAlGiornoOggi() {
+  if (riepilogo.hidden) return;
+  const intestazioneOggi = riepilogoHead.querySelector(`th[data-data="${getDataOggi()}"]`);
+  if (!intestazioneOggi) return;
+  requestAnimationFrame(() => {
+    const nomeFisso = riepilogoHead.querySelector('.riepilogo-nome-fisso');
+    const larghezzaNome = nomeFisso ? nomeFisso.getBoundingClientRect().width : 0;
+    const contenitore = riepilogo.querySelector('.riepilogo-tabella-scroll');
+    const distanzaDaInizio = intestazioneOggi.getBoundingClientRect().left -
+      contenitore.getBoundingClientRect().left + contenitore.scrollLeft;
+    contenitore.scrollLeft = Math.max(0, distanzaDaInizio - larghezzaNome - 4);
+  });
+}
+
+function salvaGiorniCompletati() {
+  try {
+    localStorage.setItem(COMPLETED_DAYS_KEY, JSON.stringify([...giorniCompletati]));
+    return true;
+  } catch (error) {
+    console.error('Impossibile salvare i giorni completati:', error);
+    window.alert('Impossibile salvare lo stato di completamento del giorno su questo dispositivo.');
+    return false;
+  }
+}
+
+function aggiornaStatoGiornoCompletato() {
+  const data = getDataAgenda();
+  const completato = giorniCompletati.has(data);
+  const futuro = data > getDataOggi();
+  agendaBtnCompletaGiorno.textContent = completato
+    ? 'Giorno completato ✓'
+    : 'Segna giorno come completato';
+  agendaBtnCompletaGiorno.classList.toggle('giorno-completato', completato);
+  agendaBtnCompletaGiorno.disabled = futuro;
+}
+
+function segnaGiornoCompletato() {
+  const data = getDataAgenda();
+  if (!data || data > getDataOggi()) return;
+  const eraCompletato = giorniCompletati.has(data);
+  if (eraCompletato) {
+    giorniCompletati.delete(data);
+  } else {
+    giorniCompletati.add(data);
+  }
+  if (!salvaGiorniCompletati()) {
+    if (eraCompletato) {
+      giorniCompletati.add(data);
+    } else {
+      giorniCompletati.delete(data);
+    }
+    return;
+  }
+  aggiornaStatoGiornoCompletato();
+  aggiornaAvvisoGiorniDaCompletare();
+  aggiornaRiepilogo();
 }
 
 function getTurniAgenda(row, data) {
@@ -643,7 +822,6 @@ function creaTurnoAgenda(row, turno, container, data, indice, eliminabile = fals
 function aggiornaAgenda() {
   agendaBody.innerHTML = '';
   agendaSelettoreOrdinamento.value = selettoreOrdinamento.value;
-  agendaBtnSalvaOrdine.disabled = selettoreOrdinamento.value !== 'personalizzato';
   const data = getDataAgenda();
 
   dipBody.querySelectorAll('.dip-row').forEach(row => {
@@ -1003,12 +1181,12 @@ agendaSelettoreOrdinamento.addEventListener('change', () => {
   selettoreOrdinamento.value = agendaSelettoreOrdinamento.value;
   ordinaDipendenti();
 });
-agendaBtnSalvaOrdine.addEventListener('click', salvaOrdinePersonalizzato);
+agendaBtnCompletaGiorno.addEventListener('click', segnaGiornoCompletato);
 agendaSelettoreData.addEventListener('change', () => {
-  localStorage.setItem(AGENDA_DATE_KEY, agendaSelettoreData.value);
-  aggiornaDataAgendaVisibile();
-  aggiornaAgenda();
+  impostaDataAgenda(agendaSelettoreData.value);
 });
+agendaGiornoPrecedente.addEventListener('click', () => spostaDataAgenda(-1));
+agendaGiornoSuccessivo.addEventListener('click', () => spostaDataAgenda(1));
 riepilogoMese.addEventListener('change', aggiornaRiepilogo);
 riepilogoMeseVisibile.addEventListener('click', () => {
   if (typeof riepilogoMese.showPicker === 'function') {
@@ -1058,7 +1236,7 @@ fileImportaMese.addEventListener('change', () => {
       aggiornaDatiDaImportazione(JSON.parse(lettore.result));
     } catch (error) {
       console.error('Impossibile importare il mese:', error);
-      window.alert('Il file selezionato non è un mese WorkHour valido.');
+      window.alert('Il file selezionato non è un mese Agenda valido.');
     } finally {
       fileImportaMese.value = '';
     }

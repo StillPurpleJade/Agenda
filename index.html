@@ -6,15 +6,15 @@
   <link rel="manifest" href="manifest.json">
   <link rel="stylesheet" href="style.css">
   <link rel="icon" type="image/png" href="logo.png">
-  <title>WorkHour</title>
+  <title>Agenda</title>
 </head>
 <body>
 
   <header class="app-header">
     <div class="app-brand">
-      <span class="app-version">v.1.0</span>
-      <img src="logo.png" alt="Logo WorkHour">
-      <h1>WorkHour</h1>
+      <span class="app-version">v.1.1</span>
+      <img src="logo.png" alt="Logo Agenda">
+      <h1>Agenda</h1>
     </div>
   </header>
 
@@ -75,7 +75,7 @@
           <option value="orario">Orario</option>
           <option value="totale">Totale</option>
         </select>
-        <button id="agenda-btn-salva-ordine" class="btn-salva-ordine" type="button">Salva ordine</button>
+        <button id="agenda-btn-completa-giorno" class="btn-salva-ordine" type="button">Segna giorno come completato</button>
       </div>
       <table class="dip-table">
         <thead>
@@ -84,9 +84,12 @@
             <th class="col-giorno">
               <label for="agenda-selettore-data" class="sr-only">Data agenda</label>
               <div class="selettore-data-agenda">
+                <button id="agenda-giorno-precedente" class="agenda-naviga-giorno" type="button" aria-label="Giorno precedente">&lt;</button>
                 <input id="agenda-data-visibile" type="text" readonly aria-hidden="true">
                 <input id="agenda-selettore-data" type="date" aria-label="Data agenda">
+                <button id="agenda-giorno-successivo" class="agenda-naviga-giorno" type="button" aria-label="Giorno successivo">&gt;</button>
               </div>
+              <div id="agenda-avviso-giorni" class="agenda-avviso-giorni" hidden aria-live="polite"></div>
             </th>
             <th class="col-tot">TOT</th>
           </tr>
@@ -105,6 +108,7 @@
         </div>
         <button id="riepilogo-mese-successivo" type="button">&gt;</button>
       </div>
+      <p id="riepilogo-giorni-non-completati" class="riepilogo-giorni-non-completati" hidden></p>
       <div class="riepilogo-tabella-scroll">
         <table class="riepilogo-table">
           <thead id="riepilogo-head"></thead>
@@ -149,6 +153,6 @@
     </div>
   </div>
 
-  <script src="app.js?v=20260908"></script>
+  <script src="app.js?v=20260930-10"></script>
 </body>
 </html>

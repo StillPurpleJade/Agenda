@@ -1,7 +1,7 @@
 {
-  "name": "WorkHour",
-  "short_name": "WorkHour",
-  "start_url": "./index.html?v=20260908",
+  "name": "Agenda",
+  "short_name": "Agenda",
+  "start_url": "./index.html?v=20260930",
   "display": "standalone",
   "background_color": "#1a1a1a",
   "theme_color": "#8b00ff",
