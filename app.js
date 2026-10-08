@@ -461,6 +461,31 @@ function formattaInputOra(input) {
   input.value = cifre.length > 2 ? `${cifre.slice(0, 2)}:${cifre.slice(2)}` : cifre;
 }
 
+function completaOraInput(input) {
+  const valore = input.value.trim();
+  if (!valore) return false;
+
+  let completato;
+  if (valore.includes(':')) {
+    const [ore, minuti = ''] = valore.split(':');
+    if (!/^\d{1,2}$/.test(ore) || !/^\d{0,2}$/.test(minuti)) return false;
+    completato = `${ore.padStart(2, '0')}:${minuti.padEnd(2, '0') || '00'}`;
+  } else {
+    const cifre = valore.replace(/\D/g, '');
+    if (cifre.length === 0 || cifre.length > 4) return false;
+    if (cifre.length <= 2) {
+      completato = `${cifre.padStart(2, '0')}:00`;
+    } else {
+      completato = `${cifre.slice(0, 2)}:${cifre.slice(2).padEnd(2, '0')}`;
+    }
+  }
+
+  const precedente = input.value;
+  input.value = completato;
+  formattaInputOra(input);
+  return input.value !== precedente;
+}
+
 function gestisciSpazioOra(input, evento) {
   if (evento.key !== ' ') return;
 
@@ -743,6 +768,8 @@ function creaTurnoAgenda(row, turno, container, data, indice, eliminabile = fals
     if (!eliminabile && !inizio.value) {
       inizio.value = turnoBase.inizio || '';
       aggiornaTurniAgenda(row, container, data);
+    } else if (completaOraInput(inizio)) {
+      aggiornaTurniAgenda(row, container, data);
     }
   });
   const separatore = document.createElement('span');
@@ -763,6 +790,8 @@ function creaTurnoAgenda(row, turno, container, data, indice, eliminabile = fals
   fine.addEventListener('blur', () => {
     if (!eliminabile && !fine.value) {
       fine.value = turnoBase.fine || '';
+      aggiornaTurniAgenda(row, container, data);
+    } else if (completaOraInput(fine)) {
       aggiornaTurniAgenda(row, container, data);
     }
   });
@@ -899,6 +928,11 @@ function creaTurno(row, valori = {}, eliminabile = false) {
     aggiornaTotali(row);
     aggiornaDatiRiga(row);
   });
+  inputInizio.addEventListener('blur', () => {
+    if (!completaOraInput(inputInizio)) return;
+    aggiornaTotali(row);
+    aggiornaDatiRiga(row);
+  });
 
   const sep = document.createElement('span');
   sep.textContent = '/';
@@ -914,6 +948,11 @@ function creaTurno(row, valori = {}, eliminabile = false) {
   inputFine.addEventListener('keydown', evento => gestisciSpazioOra(inputFine, evento));
   inputFine.addEventListener('input', () => {
     formattaInputOra(inputFine);
+    aggiornaTotali(row);
+    aggiornaDatiRiga(row);
+  });
+  inputFine.addEventListener('blur', () => {
+    if (!completaOraInput(inputFine)) return;
     aggiornaTotali(row);
     aggiornaDatiRiga(row);
   });
