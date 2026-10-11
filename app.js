@@ -322,6 +322,7 @@ function aggiornaRiepilogo() {
         const valore = document.createElement('span');
         valore.className = 'riepilogo-valore';
         if (minuti < 0) valore.classList.add('totale-negativo');
+        if (minuti > 0) valore.classList.add('totale-positivo');
         valore.textContent = minuti === 0 ? '0' : `${minuti > 0 ? '+' : ''}${minuti}`;
         td.appendChild(valore);
       });
@@ -442,10 +443,28 @@ function formattaDurata(minuti) {
 }
 
 function formattaInputOra(input) {
+  const valorePrecedente = input.value;
+  const selezioneInizio = input.selectionStart;
+  const selezioneFine = input.selectionEnd;
+  const direzioneSelezione = input.selectionDirection;
+  const contaCifrePrima = posizione => valorePrecedente
+    .slice(0, posizione)
+    .replace(/\D/g, '')
+    .length;
+  const mappaPosizione = numeroCifre => {
+    let posizione = 0;
+    let cifreTrovate = 0;
+    while (posizione < input.value.length && cifreTrovate < numeroCifre) {
+      if (/\d/.test(input.value[posizione])) cifreTrovate += 1;
+      posizione += 1;
+    }
+    if (cifreTrovate === numeroCifre && input.value[posizione] === ':') posizione += 1;
+    return posizione;
+  };
+
   let cifre = input.value.replace(/\D/g, '').slice(0, 5);
   if (cifre.length === 2 && Number(cifre) > 23) {
-    input.value = `0${cifre[0]}:${cifre[1]}`;
-    return;
+    cifre = `0${cifre}`;
   }
   if (cifre.length >= 4 && Number(cifre.slice(0, 2)) > 23) {
     cifre = `0${cifre.slice(0, 3)}`;
@@ -458,7 +477,150 @@ function formattaInputOra(input) {
       cifre = `${String(ore).padStart(2, '0')}${String(minuti % 60).padStart(2, '0')}`;
     }
   }
-  input.value = cifre.length > 2 ? `${cifre.slice(0, 2)}:${cifre.slice(2)}` : cifre;
+  const valoreFormattato = cifre.length > 2 ? `${cifre.slice(0, 2)}:${cifre.slice(2)}` : cifre;
+  if (valoreFormattato === valorePrecedente) return;
+
+  const cifrePrimaInizio = selezioneInizio === null ? null : contaCifrePrima(selezioneInizio);
+  const cifrePrimaFine = selezioneFine === null ? null : contaCifrePrima(selezioneFine);
+  input.value = valoreFormattato;
+  if (cifrePrimaInizio !== null && cifrePrimaFine !== null) {
+    input.setSelectionRange(
+      mappaPosizione(cifrePrimaInizio),
+      mappaPosizione(cifrePrimaFine),
+      direzioneSelezione
+    );
+  }
+}
+
+function leggiCifreOra(input) {
+  const [ore = '', minuti = ''] = input.value.split(':');
+  return {
+    ore: ore.replace(/\D/g, '').slice(0, 2).split(''),
+    minuti: minuti.replace(/\D/g, '').slice(0, 2).split('')
+  };
+}
+
+function slotOraDaPosizione(input, posizione) {
+  const separatore = input.value.indexOf(':');
+  if (separatore < 0 || posizione <= separatore) {
+    return Math.min(input.value.slice(0, posizione).replace(/\D/g, '').length, 2);
+  }
+  return 2 + Math.min(input.value.slice(separatore + 1, posizione).replace(/\D/g, '').length, 2);
+}
+
+function posizioneDaSlotOra(parti, slot) {
+  if (slot < 2) return Math.min(slot, parti.ore.length);
+  return parti.ore.length + 1 + Math.min(slot - 2, parti.minuti.length);
+}
+
+function disegnaOra(input, parti, posizioneCursore) {
+  const ore = parti.ore.join('');
+  const minuti = parti.minuti.join('');
+  input.value = ore || minuti ? `${ore}:${minuti}` : '';
+  const posizione = posizioneDaSlotOra(parti, posizioneCursore);
+  input.setSelectionRange(posizione, posizione);
+}
+
+function modificaOra(input, tipo, testo = '') {
+  const parti = leggiCifreOra(input);
+  const inizioSelezione = input.selectionStart ?? input.value.length;
+  const fineSelezione = input.selectionEnd ?? inizioSelezione;
+  const slotIniziale = slotOraDaPosizione(input, inizioSelezione);
+  const slotFinale = slotOraDaPosizione(input, fineSelezione);
+  let slotCursore = slotIniziale;
+
+  if (tipo === 'inserisci') {
+    const cifre = testo.replace(/\D/g, '');
+    if (!cifre) return false;
+    if (fineSelezione > inizioSelezione) {
+      for (let slot = Math.min(slotFinale, 4) - 1; slot >= slotIniziale; slot -= 1) {
+        const segmento = slot < 2 ? parti.ore : parti.minuti;
+        const indice = slot % 2;
+        if (indice < segmento.length) segmento.splice(indice, 1);
+      }
+    }
+    for (const cifra of cifre) {
+      if (slotCursore >= 4) break;
+      const segmento = slotCursore < 2 ? parti.ore : parti.minuti;
+      const indice = slotCursore % 2;
+      while (segmento.length < indice) segmento.push('0');
+      if (indice < segmento.length) segmento[indice] = cifra;
+      else segmento.push(cifra);
+      slotCursore += 1;
+    }
+  } else {
+    let slotDaEliminare = slotIniziale;
+    if (fineSelezione > inizioSelezione) {
+      const selezionati = [];
+      for (let slot = slotIniziale; slot < Math.min(slotFinale, 4); slot += 1) {
+        selezionati.push(slot);
+      }
+      if (selezionati.length === 0) return false;
+      slotDaEliminare = selezionati[0];
+      selezionati.reverse().forEach(slot => {
+        const segmento = slot < 2 ? parti.ore : parti.minuti;
+        const indice = slot % 2;
+        if (indice < segmento.length) segmento.splice(indice, 1);
+      });
+    } else {
+      if (tipo === 'indietro') slotDaEliminare -= 1;
+      if (slotDaEliminare < 0 || slotDaEliminare >= 4) return false;
+      const segmento = slotDaEliminare < 2 ? parti.ore : parti.minuti;
+      const indice = slotDaEliminare % 2;
+      if (indice >= segmento.length) return false;
+      segmento.splice(indice, 1);
+    }
+    slotCursore = Math.max(0, slotDaEliminare);
+  }
+
+  disegnaOra(input, parti, slotCursore);
+  return true;
+}
+
+function configuraInputOra(input, aggiornaDati) {
+  const applicaModifica = (tipo, testo = '') => {
+    if (modificaOra(input, tipo, testo)) aggiornaDati();
+  };
+  input.addEventListener('keydown', evento => {
+    if (evento.key === ' ' || evento.key === ':') {
+      if (gestisciSpazioOra(input, evento)) return;
+    } else if (/^\d$/.test(evento.key)) {
+      evento.preventDefault();
+      applicaModifica('inserisci', evento.key);
+    } else if (evento.key === 'Backspace' || evento.key === 'Delete') {
+      evento.preventDefault();
+      applicaModifica(evento.key === 'Backspace' ? 'indietro' : 'avanti');
+    }
+  });
+  input.addEventListener('beforeinput', evento => {
+    if (!evento.cancelable || evento.isComposing) return;
+    if (evento.inputType === 'insertText' && evento.data && /^\d+$/.test(evento.data)) {
+      evento.preventDefault();
+      applicaModifica('inserisci', evento.data);
+    } else if (evento.inputType === 'insertText' && evento.data === ':') {
+      evento.preventDefault();
+      gestisciSpazioOra(input, { key: ':', preventDefault: () => {} });
+    } else if (evento.inputType === 'deleteContentBackward' || evento.inputType === 'deleteContentForward') {
+      evento.preventDefault();
+      applicaModifica(evento.inputType === 'deleteContentBackward' ? 'indietro' : 'avanti');
+    } else if (evento.inputType === 'insertFromPaste' && evento.dataTransfer) {
+      const testo = evento.dataTransfer.getData('text').replace(/\D/g, '');
+      if (testo) {
+        evento.preventDefault();
+        applicaModifica('inserisci', testo);
+      }
+    }
+  });
+  input.addEventListener('paste', evento => {
+    const testo = evento.clipboardData.getData('text').replace(/\D/g, '');
+    if (!testo) return;
+    evento.preventDefault();
+    applicaModifica('inserisci', testo);
+  });
+  input.addEventListener('input', () => {
+    formattaInputOra(input);
+    aggiornaDati();
+  });
 }
 
 function completaOraInput(input) {
@@ -487,14 +649,16 @@ function completaOraInput(input) {
 }
 
 function gestisciSpazioOra(input, evento) {
-  if (evento.key !== ' ') return;
-
-  const cifre = input.value.replace(/\D/g, '');
-  if (cifre.length === 0 || cifre.length > 2) return;
-
+  if (evento.key !== ' ' && evento.key !== ':') return false;
   evento.preventDefault();
-  input.value = `${cifre.padStart(2, '0')}:`;
-  input.setSelectionRange(input.value.length, input.value.length);
+  const parti = leggiCifreOra(input);
+  if (parti.ore.length || parti.minuti.length) {
+    if (!input.value.includes(':')) input.value = `${parti.ore.join('')}:${parti.minuti.join('')}`;
+    const separatore = input.value.indexOf(':');
+    const posizione = separatore >= 0 ? separatore + 1 : input.value.length;
+    input.setSelectionRange(posizione, posizione);
+  }
+  return true;
 }
 
 // Aggiorna tutti i totali di una riga
@@ -738,6 +902,7 @@ function aggiornaTotaleAgenda(row, container, data) {
       valore.textContent = '/';
     } else {
       const differenza = getMinutiTurni([turno]) - getMinutiTurni(base.slice(indice, indice + 1));
+      if (differenza < 0) valore.classList.add('totale-negativo');
       valore.textContent = `${differenza >= 0 ? '+' : ''}${differenza}`;
     }
     totaleCell.appendChild(valore);
@@ -759,9 +924,7 @@ function creaTurnoAgenda(row, turno, container, data, indice, eliminabile = fals
   inizio.maxLength = 6;
   inizio.value = turno.inizio || (!eliminabile ? turnoBase.inizio || '' : '');
   inizio.setAttribute('aria-label', 'Orario di inizio agenda');
-  inizio.addEventListener('keydown', evento => gestisciSpazioOra(inizio, evento));
-  inizio.addEventListener('input', () => {
-    formattaInputOra(inizio);
+  configuraInputOra(inizio, () => {
     aggiornaTurniAgenda(row, container, data);
   });
   inizio.addEventListener('blur', () => {
@@ -782,9 +945,7 @@ function creaTurnoAgenda(row, turno, container, data, indice, eliminabile = fals
   fine.maxLength = 6;
   fine.value = turno.fine || (!eliminabile ? turnoBase.fine || '' : '');
   fine.setAttribute('aria-label', 'Orario di fine agenda');
-  fine.addEventListener('keydown', evento => gestisciSpazioOra(fine, evento));
-  fine.addEventListener('input', () => {
-    formattaInputOra(fine);
+  configuraInputOra(fine, () => {
     aggiornaTurniAgenda(row, container, data);
   });
   fine.addEventListener('blur', () => {
@@ -922,9 +1083,7 @@ function creaTurno(row, valori = {}, eliminabile = false) {
   inputInizio.value = valori.inizio || '';
   inputInizio.disabled = row.dataset.modifica !== 'true';
   inputInizio.setAttribute('aria-label', 'Orario di inizio');
-  inputInizio.addEventListener('keydown', evento => gestisciSpazioOra(inputInizio, evento));
-  inputInizio.addEventListener('input', () => {
-    formattaInputOra(inputInizio);
+  configuraInputOra(inputInizio, () => {
     aggiornaTotali(row);
     aggiornaDatiRiga(row);
   });
@@ -945,9 +1104,7 @@ function creaTurno(row, valori = {}, eliminabile = false) {
   inputFine.value = valori.fine || '';
   inputFine.disabled = row.dataset.modifica !== 'true';
   inputFine.setAttribute('aria-label', 'Orario di fine');
-  inputFine.addEventListener('keydown', evento => gestisciSpazioOra(inputFine, evento));
-  inputFine.addEventListener('input', () => {
-    formattaInputOra(inputFine);
+  configuraInputOra(inputFine, () => {
     aggiornaTotali(row);
     aggiornaDatiRiga(row);
   });

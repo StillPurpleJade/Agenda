@@ -385,6 +385,14 @@ body {
   color: #ff4d4d;
 }
 
+.riepilogo-valore.totale-positivo {
+  color: #90ee90;
+}
+
+.cell-tot .tot-valore.totale-negativo {
+  color: #ff4d4d;
+}
+
 .riepilogo-valore.riepilogo-assenza {
   color: #ff4d4d;
   font-size: 28px;
