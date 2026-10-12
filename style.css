@@ -688,6 +688,9 @@ body {
   width: 553px;
   min-width: 553px;
   max-width: 553px;
+  border: 0;
+  border-collapse: separate;
+  border-spacing: 0 5px;
 }
 
 .dip-row > .cell-nome {
@@ -751,6 +754,61 @@ body[data-tab="riepilogo"] .riepilogo-scroll-fisso {
 
 .riepilogo-scroll-fisso-contenuto {
   height: 1px;
+}
+
+button,
+input,
+select,
+textarea {
+  border-radius: 4px;
+}
+
+.dip-row td:first-child {
+  border-top-left-radius: 4px;
+  border-bottom-left-radius: 4px;
+}
+
+.dip-row td:last-child {
+  border-top-right-radius: 4px;
+  border-bottom-right-radius: 4px;
+}
+
+.riepilogo-table th:first-child,
+.riepilogo-table td:first-child {
+  border-top-left-radius: 4px;
+  border-bottom-left-radius: 4px;
+}
+
+.riepilogo-table th.riepilogo-totale-fisso,
+.riepilogo-table td.riepilogo-totale-fisso {
+  border-top-right-radius: 4px;
+  border-bottom-right-radius: 4px;
+}
+
+.riepilogo-tabella-scroll {
+  border-radius: 5px;
+}
+
+.btn-add {
+  width: 177px;
+  max-width: 100%;
+  border-radius: 4px;
+}
+
+#agenda-btn-completa-giorno {
+  min-height: 52px;
+  padding: 6px 10px;
+  border-radius: 6px;
+  font-size: 14px;
+}
+
+.app-header[data-tab="agenda"] #agenda-btn-completa-giorno {
+  transform: translateY(9px);
+}
+
+.agenda-naviga-giorno,
+#agenda-data-visibile {
+  border-radius: 5px;
 }
 
 body[data-tab="riepilogo"] #riepilogo {
@@ -943,6 +1001,7 @@ body {
   align-content: start;
   padding: calc(env(safe-area-inset-top) + 6px) 10px 8px;
   background: #000;
+  border-bottom: 2px solid #8b00ff;
 }
 
 .app-header-top {
@@ -1336,6 +1395,44 @@ main {
   width: 553px;
   min-width: 553px;
   max-width: 553px;
+}
+
+.agenda-toolbar {
+  height: 54px;
+  transform: translateY(4px);
+}
+
+.agenda-ordine {
+  display: grid;
+  grid-template-rows: 12px 24px;
+  align-content: center;
+  justify-content: stretch;
+  align-items: stretch;
+  gap: 2px;
+  height: 38px;
+}
+
+.agenda-ordine label {
+  font-size: 10px;
+  line-height: 12px;
+}
+
+.agenda-ordine select {
+  grid-row: 2;
+  height: 24px;
+  padding: 2px 4px;
+  font-size: 10px;
+}
+
+.tab.active img {
+  transform: scale(1.2);
+  animation: tab-selezionata 0.24s ease-out;
+}
+
+@keyframes tab-selezionata {
+  0% { transform: scale(0.96); }
+  70% { transform: scale(1.24); }
+  100% { transform: scale(1.2); }
 }
 
 .dip-table th {
