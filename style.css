@@ -304,6 +304,22 @@ body {
   outline: none;
 }
 
+.cell-nome .nome-dipendente-testo {
+  display: block;
+  min-height: 1.2em;
+  line-height: 1.2;
+  white-space: normal;
+  overflow-wrap: anywhere;
+}
+
+.dip-row[data-modifica="true"] .nome-dipendente-testo {
+  display: none;
+}
+
+.dip-row[data-modifica="false"] .cell-nome input {
+  display: none;
+}
+
 /* Cella orari (può avere 1 o 2 turni) */
 .cell-orari {
   padding: 0;
@@ -564,6 +580,12 @@ body {
   overflow-x: auto;
   max-width: 100%;
   border: 2px solid #555;
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+}
+
+.riepilogo-tabella-scroll::-webkit-scrollbar {
+  display: none;
 }
 
 .riepilogo-table {
@@ -601,7 +623,7 @@ body {
   position: sticky;
   left: 0;
   z-index: 2;
-  min-width: 150px !important;
+  min-width: 125px !important;
   text-align: left !important;
   background: #1a1a1a !important;
   color: #4da6ff;
@@ -629,9 +651,110 @@ body {
 
 .riepilogo-import-export {
   display: flex;
-  justify-content: center;
-  gap: 10px;
-  margin-top: 12px;
+  justify-content: space-evenly;
+  width: 100%;
+  gap: 8px;
+  margin: 0;
+}
+
+.riepilogo-import-export button {
+  flex: 1 1 0;
+  max-width: 160px;
+  padding: 6px 8px;
+  font-size: 12px;
+}
+
+.tab-toolbar-riepilogo .riepilogo-import-export {
+  align-items: center;
+  height: 64px;
+}
+
+.riepilogo-nome-fisso {
+  width: 125px;
+  max-width: 125px;
+  min-width: 125px !important;
+  white-space: normal !important;
+  overflow-wrap: anywhere;
+  line-height: 1.2;
+}
+
+.riepilogo-nome-fisso:not(th) {
+  white-space: normal !important;
+  overflow-wrap: anywhere;
+}
+
+.dip-table {
+  table-layout: fixed;
+  width: 553px;
+  min-width: 553px;
+  max-width: 553px;
+}
+
+.dip-row > .cell-nome {
+  width: 177px;
+  min-width: 177px;
+  overflow-wrap: anywhere;
+}
+
+.dip-row > .cell-orari {
+  width: 232px;
+  min-width: 232px;
+}
+
+.dip-row > .cell-tot {
+  width: 144px;
+  min-width: 144px;
+  height: 76px;
+  padding: 6px 4px;
+  vertical-align: middle;
+  font-size: 17px;
+}
+
+#dipendenti .dip-table {
+  width: 481px;
+  min-width: 481px;
+  max-width: 481px;
+}
+
+#dipendenti .dip-row > .cell-orari {
+  width: 160px;
+  min-width: 160px;
+}
+
+.cell-tot .totali-valori,
+.cell-tot .tot-valore {
+  min-height: 24px;
+}
+
+.turno input {
+  width: 64px;
+  min-width: 64px;
+}
+
+.riepilogo-scroll-fisso {
+  display: none;
+  position: fixed;
+  inset: auto 0 var(--tabs-height);
+  z-index: 9;
+  height: 14px;
+  overflow-x: auto;
+  overflow-y: hidden;
+  background: #1a1a1a;
+  border-top: 1px solid #555;
+  -webkit-overflow-scrolling: touch;
+  overscroll-behavior-x: contain;
+}
+
+body[data-tab="riepilogo"] .riepilogo-scroll-fisso {
+  display: block;
+}
+
+.riepilogo-scroll-fisso-contenuto {
+  height: 1px;
+}
+
+body[data-tab="riepilogo"] #riepilogo {
+  padding-bottom: 26px;
 }
 
 .riepilogo-import-export button,
@@ -789,4 +912,452 @@ body {
   justify-content: flex-end;
   gap: 8px;
   margin-top: 16px;
+}
+
+:root {
+  --header-height: calc(136px + env(safe-area-inset-top));
+  --tabs-height: calc(92px + env(safe-area-inset-bottom));
+}
+
+html,
+body {
+  width: 100%;
+  height: 100%;
+  background: #000;
+}
+
+body {
+  min-height: 100dvh;
+  overflow: hidden;
+}
+
+.app-header {
+  position: fixed;
+  inset: 0 0 auto;
+  z-index: 10;
+  height: var(--header-height);
+  display: grid;
+  grid-template-rows: 52px 64px;
+  row-gap: 6px;
+  justify-content: stretch;
+  align-content: start;
+  padding: calc(env(safe-area-inset-top) + 6px) 10px 8px;
+  background: #000;
+}
+
+.app-header-top {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  min-width: 0;
+}
+
+.app-brand img {
+  width: 58px;
+  height: 48px;
+}
+
+.app-version {
+  top: -2px;
+  left: 55px;
+  font-size: 12px;
+}
+
+.header-actions {
+  display: grid;
+  grid-template-areas: "action";
+  width: 156px;
+  min-height: 46px;
+}
+
+.header-actions > button,
+.header-actions > .riepilogo-controlli,
+.header-actions > .dipendenti-giorno-controlli {
+  grid-area: action;
+  width: 132px;
+  min-height: 46px;
+}
+
+.header-actions > button {
+  justify-self: end;
+  padding: 5px 8px;
+  background: #8b00ff;
+  border: 1px solid #b45cff;
+  color: #fff;
+  cursor: pointer;
+  font-weight: bold;
+  font-size: 12px;
+  line-height: 1.1;
+}
+
+.header-actions > .dipendenti-giorno-controlli {
+  justify-self: end;
+  align-items: center;
+}
+
+.header-actions > .dipendenti-giorno-controlli select {
+  height: 46px;
+  padding: 5px 8px;
+  background: #8b00ff;
+  border: 1px solid #b45cff;
+  color: #fff;
+  font-weight: bold;
+  font-size: 12px;
+}
+
+.header-actions #btn-aggiungi-tutti-giorni {
+  margin: 0;
+  padding: 5px 8px;
+  font-size: 12px;
+  line-height: 1.1;
+}
+
+.header-actions > .riepilogo-controlli {
+  display: none;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 2px;
+  width: 156px;
+  margin: 0;
+}
+
+.header-actions > .riepilogo-controlli button {
+  flex: 0 0 25px;
+  width: 25px;
+  height: 34px;
+  padding: 0;
+  font-size: 16px;
+}
+
+.header-actions .selettore-mese-riepilogo {
+  flex: 0 1 92px;
+  width: 92px;
+  height: 34px;
+}
+
+.header-actions #riepilogo-mese-visibile,
+.header-actions #riepilogo-mese {
+  height: 34px;
+  padding: 4px 2px;
+  font-size: 12px;
+}
+
+.app-header[data-tab="agenda"] #btn-aggiungi-tutti-giorni,
+.app-header[data-tab="agenda"] .header-actions > .riepilogo-controlli,
+.app-header[data-tab="dipendenti"] #agenda-btn-completa-giorno,
+.app-header[data-tab="dipendenti"] .header-actions > .riepilogo-controlli,
+.app-header[data-tab="riepilogo"] #agenda-btn-completa-giorno,
+.app-header[data-tab="riepilogo"] #btn-aggiungi-tutti-giorni {
+  visibility: hidden;
+}
+
+.app-header[data-tab="riepilogo"] .header-actions > .riepilogo-controlli {
+  display: flex;
+  visibility: visible;
+}
+
+.dipendenti-toolbar > .ordinamento {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  grid-template-rows: 12px 27px 18px;
+  align-content: center;
+  justify-items: stretch;
+  gap: 0;
+}
+
+.dipendenti-toolbar > .ordinamento label {
+  grid-column: 1;
+  grid-row: 1;
+  align-self: end;
+}
+
+.dipendenti-toolbar > .ordinamento select {
+  grid-column: 1;
+  grid-row: 2;
+}
+
+.dipendenti-toolbar .ordinamento select,
+#selettore-ordinamento {
+  flex: none;
+  width: 100%;
+  height: 27px;
+}
+
+.dipendenti-toolbar #btn-salva-ordine {
+  grid-column: 1;
+  grid-row: 3;
+  justify-self: start;
+  width: 100%;
+  min-height: 18px;
+  height: 18px;
+  padding: 1px 5px;
+  background: #2a2a2a;
+  border: 1px solid #666;
+  color: #fff;
+  font-size: 10px;
+  line-height: 1;
+}
+
+.app-header[data-tab="agenda"] #btn-salva-ordine,
+.app-header[data-tab="riepilogo"] #btn-salva-ordine {
+  visibility: hidden;
+}
+
+.header-toolbar {
+  display: none;
+  align-items: center;
+  min-width: 0;
+  height: 64px;
+}
+
+.app-header[data-tab="dipendenti"] .tab-toolbar-dipendenti,
+.app-header[data-tab="agenda"] .tab-toolbar-agenda,
+.app-header[data-tab="riepilogo"] .tab-toolbar-riepilogo {
+  display: flex;
+}
+
+main {
+  position: fixed;
+  inset: var(--header-height) 0 var(--tabs-height);
+  overflow: auto;
+  overscroll-behavior: contain;
+  background: #000;
+}
+
+.page {
+  padding: 8px 8px 18px;
+  overflow: visible;
+}
+
+.tabs {
+  position: fixed;
+  inset: auto 0 0;
+  z-index: 10;
+  height: var(--tabs-height);
+  align-items: stretch;
+  padding: 7px 8px calc(env(safe-area-inset-bottom) + 5px);
+  border-top: 2px solid #8b00ff;
+  border-bottom: 0;
+  background: #000;
+}
+
+.tab {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 3px;
+  padding: 2px 0;
+  color: #fff;
+  font-size: 13px;
+  font-weight: normal;
+  transition: color 0.2s ease;
+}
+
+.tab img {
+  display: block;
+  width: 48px;
+  height: 48px;
+  object-fit: contain;
+  transform: scale(1);
+  transition: transform 0.2s ease;
+}
+
+.tab.active {
+  color: #fff;
+  background: transparent;
+}
+
+.tab.active img {
+  transform: scale(1.13);
+  animation: tab-selezionata 0.24s ease-out;
+}
+
+.tab:not(.active):hover {
+  color: #fff;
+  background: transparent;
+}
+
+@keyframes tab-selezionata {
+  0% { transform: scale(0.96); }
+  70% { transform: scale(1.18); }
+  100% { transform: scale(1.13); }
+}
+
+.dipendenti-toolbar {
+  display: grid;
+  grid-template-columns: minmax(0, 0.8fr) minmax(0, 1.2fr);
+  align-items: center;
+  width: 100%;
+  gap: 8px;
+}
+
+.dipendenti-toolbar > .dipendenti-giorno-controlli {
+  justify-self: end;
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+  gap: 0;
+  width: 132px;
+  min-height: 54px;
+  margin: 0;
+}
+
+.dipendenti-toolbar > .dipendenti-giorno-controlli select {
+  height: 27px;
+  padding: 3px 4px;
+  background: #2a2a2a;
+  border: 1px solid #666;
+  color: #fff;
+  font-size: 11px;
+}
+
+.dipendenti-toolbar #btn-aggiungi-tutti-giorni {
+  width: 132px;
+  height: 27px;
+  margin: 0;
+  padding: 3px 4px;
+  background: #2a2a2a;
+  border: 1px solid #666;
+  color: #fff;
+  font-size: 10px;
+}
+
+.agenda-toolbar {
+  display: grid;
+  grid-template-columns: minmax(0, 0.8fr) minmax(0, 1.6fr);
+  align-items: center;
+  width: 100%;
+  height: 48px;
+  gap: 8px;
+}
+
+.agenda-ordine {
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  justify-content: center;
+  gap: 4px;
+  min-width: 0;
+}
+
+.agenda-ordine label {
+  flex: 0 0 auto;
+  font-size: 11px;
+}
+
+.agenda-ordine select {
+  width: 100%;
+  min-width: 0;
+  padding: 6px 4px;
+  background: #2a2a2a;
+  border: 1px solid #666;
+  color: #fff;
+  font-size: 11px;
+}
+
+.agenda-data-controlli {
+  min-width: 0;
+}
+
+.selettore-data-agenda {
+  display: flex;
+  width: 100%;
+  gap: 4px;
+}
+
+.agenda-naviga-giorno {
+  flex: 0 0 32px;
+  width: 32px;
+  height: 38px;
+  font-size: 20px;
+}
+
+.agenda-data-campo {
+  position: relative;
+  flex: 1 1 auto;
+  min-width: 0;
+  height: 38px;
+}
+
+#agenda-data-visibile {
+  width: 100%;
+  height: 100%;
+  padding: 5px 8px;
+  background: #1a1a1a;
+  border: 1px solid #666;
+  border-radius: 3px;
+  color: #fff;
+  font: bold 15px Arial, sans-serif;
+  text-align: center;
+  pointer-events: none;
+}
+
+#agenda-data-visibile.agenda-giorno-non-completato {
+  color: #ef4444;
+}
+
+#agenda-selettore-data {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  opacity: 0;
+  cursor: pointer;
+  pointer-events: auto;
+}
+
+.agenda-avviso-giorni {
+  max-width: none;
+  margin: 0 0 8px;
+  font-size: 12px;
+}
+
+.riepilogo-controlli button {
+  width: 38px;
+  height: 38px;
+  padding: 0;
+  font-size: 20px;
+}
+
+.selettore-mese-riepilogo {
+  width: min(190px, 60%);
+  height: 38px;
+}
+
+#riepilogo-mese-visibile,
+#riepilogo-mese {
+  width: 100%;
+  height: 38px;
+  font-size: 15px;
+}
+
+.dip-table {
+  width: 553px;
+  min-width: 553px;
+  max-width: 553px;
+}
+
+.dip-table th {
+  display: none;
+}
+
+.dip-row td {
+  background: #1a1a1a;
+}
+
+.btn-assente {
+  background: #3b1111;
+  border-color: #812222;
+  color: #ff4d4d;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    scroll-behavior: auto !important;
+    animation-duration: 0.01ms !important;
+    transition-duration: 0.01ms !important;
+  }
 }

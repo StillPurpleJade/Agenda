@@ -1,19 +1,34 @@
 // --- Navigazione tab ---
+const appHeader = document.querySelector('.app-header');
+
+function aggiornaIconeTab() {
+  document.querySelectorAll('.tab').forEach(tab => {
+    const icona = tab.querySelector('img');
+    icona.src = tab.classList.contains('active') ? icona.dataset.iconOn : icona.dataset.iconOff;
+  });
+}
+
 document.querySelectorAll('.tab').forEach(btn => {
   btn.addEventListener('click', () => {
+    salvaModificheDipendentiAperte();
     document.querySelectorAll('.tab').forEach(b => b.classList.remove('active'));
     btn.classList.add('active');
     document.querySelectorAll('.page').forEach(s => s.hidden = true);
     document.getElementById(btn.dataset.tab).hidden = false;
+    appHeader.dataset.tab = btn.dataset.tab;
+    document.body.dataset.tab = btn.dataset.tab;
+    aggiornaIconeTab();
     if (btn.dataset.tab === 'riepilogo') aggiornaRiepilogo();
   });
 });
+aggiornaIconeTab();
 
 // --- Dipendenti ---
 const dipBody = document.getElementById('dip-body');
 const btnAggiungi = document.getElementById('btn-aggiungi');
 const selettoreOrdinamento = document.getElementById('selettore-ordinamento');
 const btnSalvaOrdine = document.getElementById('btn-salva-ordine');
+let modificaOrdineAttiva = false;
 const selettoreGiorno = document.getElementById('selettore-giorno');
 const btnAggiungiTuttiGiorni = document.getElementById('btn-aggiungi-tutti-giorni');
 const agendaBody = document.getElementById('agenda-body');
@@ -32,6 +47,9 @@ const riepilogoMesePrecedente = document.getElementById('riepilogo-mese-preceden
 const riepilogoMeseSuccessivo = document.getElementById('riepilogo-mese-successivo');
 const riepilogoHead = document.getElementById('riepilogo-head');
 const riepilogoBody = document.getElementById('riepilogo-body');
+const riepilogoTabellaScroll = document.querySelector('.riepilogo-tabella-scroll');
+const riepilogoScrollFisso = document.querySelector('.riepilogo-scroll-fisso');
+const riepilogoScrollFissoContenuto = document.querySelector('.riepilogo-scroll-fisso-contenuto');
 const popupAssenza = document.getElementById('popup-assenza');
 const motivazioneAssenza = document.getElementById('motivazione-assenza');
 const listaSuggerimenti = document.getElementById('lista-suggerimenti');
@@ -46,6 +64,29 @@ const dettaglioAssenzaTesto = document.getElementById('dettaglio-assenza-testo')
 const btnChiudiDettaglioAssenza = document.getElementById('btn-chiudi-dettaglio-assenza');
 const btnEsportaMese = document.getElementById('btn-esporta-mese');
 const btnImportaMese = document.getElementById('btn-importa-mese');
+
+let sincronizzaScorrimentoRiepilogo = false;
+
+function aggiornaBarraScorrimentoRiepilogo() {
+  riepilogoScrollFissoContenuto.style.width = `${riepilogoTabellaScroll.scrollWidth}px`;
+  riepilogoScrollFisso.scrollLeft = riepilogoTabellaScroll.scrollLeft;
+}
+
+riepilogoTabellaScroll.addEventListener('scroll', () => {
+  if (sincronizzaScorrimentoRiepilogo) return;
+  sincronizzaScorrimentoRiepilogo = true;
+  riepilogoScrollFisso.scrollLeft = riepilogoTabellaScroll.scrollLeft;
+  sincronizzaScorrimentoRiepilogo = false;
+});
+
+riepilogoScrollFisso.addEventListener('scroll', () => {
+  if (sincronizzaScorrimentoRiepilogo) return;
+  sincronizzaScorrimentoRiepilogo = true;
+  riepilogoTabellaScroll.scrollLeft = riepilogoScrollFisso.scrollLeft;
+  sincronizzaScorrimentoRiepilogo = false;
+});
+
+window.addEventListener('resize', aggiornaBarraScorrimentoRiepilogo);
 const fileImportaMese = document.getElementById('file-importa-mese');
 const STORAGE_KEY = 'ore-lavoro-dipendenti';
 const ORDER_KEY = 'ore-lavoro-ordinamento';
@@ -259,6 +300,66 @@ function aggiornaMeseRiepilogoVisibile() {
   riepilogoMeseVisibile.value = anno && mese ? `${mese} ${anno}` : '';
 }
 
+function impostaNomeSuRighe(elemento, nome, abbrevia = false) {
+  const testo = (nome || 'Nome...').trim();
+  if (abbrevia) {
+    const righeNome = testo.split(/\s+/).map(parola => {
+      const caratteriParola = Array.from(parola);
+      let lettere = 0;
+      let fine = caratteriParola.length;
+      for (let indice = 0; indice < caratteriParola.length; indice += 1) {
+        if (!/\p{L}/u.test(caratteriParola[indice])) continue;
+        lettere += 1;
+        if (lettere === 10 && caratteriParola.slice(indice + 1).some(carattere => /\p{L}/u.test(carattere))) {
+          fine = indice + 1;
+          break;
+        }
+      }
+      return `${caratteriParola.slice(0, fine).join('')}${fine < caratteriParola.length ? '.' : ''}`;
+    });
+    elemento.replaceChildren();
+    righeNome.forEach((testoRiga, indice) => {
+      if (indice > 0) elemento.appendChild(document.createElement('br'));
+      elemento.appendChild(document.createTextNode(testoRiga));
+    });
+    return;
+  }
+
+  const righe = [];
+  let riga = '';
+  let numeroLettere = 0;
+  const caratteri = Array.from(testo);
+  caratteri.forEach((carattere, indice) => {
+    if (/\s/.test(carattere)) {
+      if (riga) righe.push(riga.trim());
+      riga = '';
+      numeroLettere = 0;
+      return;
+    }
+
+    riga += carattere;
+    if (/\p{L}/u.test(carattere)) numeroLettere += 1;
+
+    if (numeroLettere === 10) {
+      const continuaParola = caratteri[indice + 1] && !/\s/.test(caratteri[indice + 1]);
+      righe.push(`${riga.trim()}${continuaParola ? '-' : ''}`);
+      riga = '';
+      numeroLettere = 0;
+    }
+  });
+  if (riga.trim()) righe.push(riga.trim());
+
+  if (righe.length < 2) {
+    elemento.textContent = testo;
+    return;
+  }
+  elemento.replaceChildren();
+  righe.forEach((testoRiga, indice) => {
+    if (indice > 0) elemento.appendChild(document.createElement('br'));
+    elemento.appendChild(document.createTextNode(testoRiga));
+  });
+}
+
 function aggiornaRiepilogo() {
   if (!riepilogoMese || !riepilogoMese.value) return;
   aggiornaMeseRiepilogoVisibile();
@@ -296,8 +397,10 @@ function aggiornaRiepilogo() {
   dipBody.querySelectorAll('.dip-row').forEach(row => {
     const tr = document.createElement('tr');
     const nome = document.createElement('td');
-    nome.textContent = row._dati.nome || 'Nome...';
     nome.className = 'riepilogo-nome-fisso';
+    const nomeDipendente = row._dati.nome || 'Nome...';
+    nome.setAttribute('aria-label', nomeDipendente);
+    impostaNomeSuRighe(nome, nomeDipendente, true);
     tr.appendChild(nome);
     const totaliPerTurno = [];
     for (let giorno = 1; giorno <= giorniNelMese; giorno += 1) {
@@ -337,6 +440,12 @@ function aggiornaRiepilogo() {
       valore.textContent = totale === 0 ? '0' : formattaDifferenza(totale);
       totaleCell.appendChild(valore);
     });
+    if (totaliPerTurno.length === 0) {
+      const valore = document.createElement('span');
+      valore.className = 'riepilogo-valore';
+      valore.textContent = '0';
+      totaleCell.appendChild(valore);
+    }
     tr.appendChild(totaleCell);
     const spazioScorrimento = document.createElement('td');
     spazioScorrimento.className = 'riepilogo-scroll-spacer';
@@ -345,6 +454,7 @@ function aggiornaRiepilogo() {
     riepilogoBody.appendChild(tr);
   });
   portaRiepilogoAlGiornoOggi();
+  aggiornaBarraScorrimentoRiepilogo();
 }
 
 // Calcola ore da "HH:MM" a minuti
@@ -667,12 +777,20 @@ function aggiornaTotali(row) {
   const totCell = row.querySelector('.totali-valori');
   totCell.innerHTML = '';
 
+  if (turni.length === 0) {
+    const span = document.createElement('span');
+    span.className = 'tot-valore';
+    span.textContent = '0';
+    totCell.appendChild(span);
+    return;
+  }
+
   turni.forEach(turno => {
     const inputs = turno.querySelectorAll('input');
     const minuti = calcolaTotTurno(inputs[0], inputs[1]);
     const span = document.createElement('span');
     span.className = 'tot-valore';
-    span.textContent = formattaDurata(minuti);
+    span.textContent = minuti > 0 ? formattaDurata(minuti) : '0';
     totCell.appendChild(span);
   });
 }
@@ -758,10 +876,10 @@ function aggiornaAvvisoGiorniDaCompletare() {
   const giorniMancanti = getGiorniDaCompletareDelMeseAgenda();
   agendaAvvisoGiorni.replaceChildren();
   agendaAvvisoGiorni.hidden = giorniMancanti.length === 0;
-  agendaSelettoreData.classList.toggle(
-    'agenda-giorno-non-completato',
-    agendaSelettoreData.value <= getDataOggi() && !giorniCompletati.has(agendaSelettoreData.value)
-  );
+  const giornoNonCompletato =
+    agendaSelettoreData.value <= getDataOggi() && !giorniCompletati.has(agendaSelettoreData.value);
+  agendaSelettoreData.classList.toggle('agenda-giorno-non-completato', giornoNonCompletato);
+  agendaDataVisibile.classList.toggle('agenda-giorno-non-completato', giornoNonCompletato);
   if (giorniMancanti.length === 0) return;
 
   agendaAvvisoGiorni.append('! Giorni da completare: ');
@@ -903,10 +1021,16 @@ function aggiornaTotaleAgenda(row, container, data) {
     } else {
       const differenza = getMinutiTurni([turno]) - getMinutiTurni(base.slice(indice, indice + 1));
       if (differenza < 0) valore.classList.add('totale-negativo');
-      valore.textContent = `${differenza >= 0 ? '+' : ''}${differenza}`;
+      valore.textContent = `${differenza > 0 ? '+' : ''}${differenza}`;
     }
     totaleCell.appendChild(valore);
   });
+  if (turniAgenda.length === 0) {
+    const valore = document.createElement('span');
+    valore.className = 'tot-valore';
+    valore.textContent = '0';
+    totaleCell.appendChild(valore);
+  }
 }
 
 function creaTurnoAgenda(row, turno, container, data, indice, eliminabile = false) {
@@ -1020,7 +1144,7 @@ function aggiornaAgenda() {
 
     const tdNome = document.createElement('td');
     tdNome.className = 'cell-nome';
-    tdNome.textContent = row._dati.nome || 'Nome...';
+    impostaNomeSuRighe(tdNome, row._dati.nome, true);
 
     const tdOrari = document.createElement('td');
     tdOrari.className = 'cell-orari';
@@ -1154,6 +1278,9 @@ function aggiungiDipendente(dati = {}) {
   // Cella nome
   const tdNome = document.createElement('td');
   tdNome.className = 'cell-nome';
+  const nomeMostrato = document.createElement('span');
+  nomeMostrato.className = 'nome-dipendente-testo';
+  impostaNomeSuRighe(nomeMostrato, row._dati.nome);
   const inputNome = document.createElement('input');
   inputNome.type = 'text';
   inputNome.placeholder = 'Nome...';
@@ -1162,12 +1289,13 @@ function aggiungiDipendente(dati = {}) {
   inputNome.setAttribute('aria-label', 'Nome dipendente');
   inputNome.addEventListener('input', () => {
     row._dati.nome = inputNome.value;
+    impostaNomeSuRighe(nomeMostrato, row._dati.nome);
     salvaDipendenti();
   });
   inputNome.addEventListener('blur', () => {
     if (selettoreOrdinamento.value === 'az') ordinaDipendenti();
   });
-  tdNome.appendChild(inputNome);
+  tdNome.append(nomeMostrato, inputNome);
 
   const azioni = document.createElement('div');
   azioni.className = 'azioni-dipendente';
@@ -1232,8 +1360,39 @@ function impostaModifica(row, btnModifica) {
   });
   btnModifica.textContent = inModifica ? 'Salva' : 'Modifica';
   row.querySelector('.btn-elimina').hidden = !inModifica;
+  impostaNomeSuRighe(row.querySelector('.nome-dipendente-testo'), row._dati.nome);
   if (!inModifica) salvaDipendenti();
 }
+
+function salvaModificheDipendentiAperte() {
+  dipBody.querySelectorAll('.dip-row[data-modifica="true"]').forEach(row => {
+    const btnModifica = row.querySelector('.btn-modifica');
+    if (btnModifica) impostaModifica(row, btnModifica);
+  });
+}
+
+document.addEventListener('focusin', evento => {
+  const rigaDestinazione = evento.target.closest('.dip-row');
+  dipBody.querySelectorAll('.dip-row[data-modifica="true"]').forEach(row => {
+    if (row !== rigaDestinazione) {
+      impostaModifica(row, row.querySelector('.btn-modifica'));
+    }
+  });
+});
+
+document.addEventListener('pointerdown', evento => {
+  const rigaDestinazione = evento.target.closest('.dip-row');
+  dipBody.querySelectorAll('.dip-row[data-modifica="true"]').forEach(row => {
+    if (row !== rigaDestinazione) {
+      impostaModifica(row, row.querySelector('.btn-modifica'));
+    }
+  });
+}, true);
+
+window.addEventListener('pagehide', salvaModificheDipendentiAperte);
+document.addEventListener('visibilitychange', () => {
+  if (document.visibilityState === 'hidden') salvaModificheDipendentiAperte();
+});
 
 function eliminaDipendente(row) {
   const nome = row.querySelector('.cell-nome input').value.trim() || 'questo dipendente';
@@ -1245,15 +1404,18 @@ function eliminaDipendente(row) {
 function aggiornaAzioniOrdine() {
   const personalizzato = selettoreOrdinamento.value === 'personalizzato';
   btnSalvaOrdine.disabled = !personalizzato;
+  btnSalvaOrdine.hidden = !personalizzato;
+  btnSalvaOrdine.textContent = modificaOrdineAttiva ? 'Salva ordine' : 'Modifica ordine';
   document.querySelectorAll('.dip-row').forEach(row => {
-    row.draggable = personalizzato;
-    row.classList.toggle('trascinabile', personalizzato);
+    row.draggable = personalizzato && modificaOrdineAttiva;
+    row.classList.toggle('trascinabile', personalizzato && modificaOrdineAttiva);
   });
   aggiornaAgenda();
 }
 
 function ordinaDipendenti() {
   const righe = [...dipBody.querySelectorAll('.dip-row')];
+  if (selettoreOrdinamento.value !== 'personalizzato') modificaOrdineAttiva = false;
   localStorage.setItem(ORDER_KEY, selettoreOrdinamento.value);
   if (selettoreOrdinamento.value === 'az') {
     righe.sort((a, b) => a.querySelector('.cell-nome input').value.localeCompare(
@@ -1280,19 +1442,24 @@ function ordinaDipendenti() {
 
 function salvaOrdinePersonalizzato() {
   if (selettoreOrdinamento.value !== 'personalizzato') return;
+  if (!modificaOrdineAttiva) {
+    modificaOrdineAttiva = true;
+    aggiornaAzioniOrdine();
+    return;
+  }
   ordinePersonalizzato = [...dipBody.querySelectorAll('.dip-row')].map(row => row.dataset.id);
   localStorage.setItem(CUSTOM_ORDER_KEY, JSON.stringify(ordinePersonalizzato));
-  btnSalvaOrdine.textContent = 'Ordine salvato';
-  setTimeout(() => {
-    btnSalvaOrdine.textContent = 'Salva ordine';
-  }, 1500);
+  modificaOrdineAttiva = false;
+  aggiornaAzioniOrdine();
 }
 
 function configuraTrascinamento(row) {
-  row.draggable = selettoreOrdinamento.value === 'personalizzato';
+  const trascinabile = selettoreOrdinamento.value === 'personalizzato' && modificaOrdineAttiva;
+  row.draggable = trascinabile;
+  row.classList.toggle('trascinabile', trascinabile);
 
   row.addEventListener('dragstart', event => {
-    if (selettoreOrdinamento.value !== 'personalizzato') {
+    if (selettoreOrdinamento.value !== 'personalizzato' || !modificaOrdineAttiva) {
       event.preventDefault();
       return;
     }
@@ -1307,7 +1474,8 @@ function configuraTrascinamento(row) {
   });
 
   row.addEventListener('dragover', event => {
-    if (selettoreOrdinamento.value !== 'personalizzato' || row.classList.contains('in-trascinamento')) return;
+    if (selettoreOrdinamento.value !== 'personalizzato' || !modificaOrdineAttiva ||
+      row.classList.contains('in-trascinamento')) return;
     event.preventDefault();
     const draggedRow = document.querySelector('.in-trascinamento');
     if (!draggedRow) return;
@@ -1354,6 +1522,7 @@ function caricaDipendenti() {
       ordinamentoSalvato === 'totale' || ordinamentoSalvato === 'personalizzato') {
       selettoreOrdinamento.value = ordinamentoSalvato;
     }
+    aggiornaAzioniOrdine();
     caricamentoInCorso = true;
     dipendenti.forEach(aggiungiDipendente);
     caricamentoInCorso = false;

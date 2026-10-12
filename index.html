@@ -2,62 +2,114 @@
 <html lang="it">
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+  <meta name="theme-color" content="#000000">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black">
   <link rel="manifest" href="manifest.json">
-  <link rel="stylesheet" href="style.css">
+  <link rel="stylesheet" href="style.css?v=20261012-21">
   <link rel="icon" type="image/png" href="logo.png">
+  <link rel="apple-touch-icon" href="App%20Logo.png">
   <title>Agenda</title>
 </head>
-<body>
+<body data-tab="agenda">
 
-  <header class="app-header">
-    <div class="app-brand">
-      <span class="app-version">v.1.3</span>
-      <img src="logo.png" alt="Logo Agenda">
-      <h1>Agenda</h1>
+  <header class="app-header" data-tab="agenda">
+    <div class="app-header-top">
+      <div class="app-brand">
+        <span class="app-version">v.1.4</span>
+        <img src="logo.png" alt="Logo Agenda">
+      </div>
+      <div class="header-actions">
+        <button id="agenda-btn-completa-giorno" class="btn-salva-ordine" type="button">Segna giorno come completato</button>
+        <div class="riepilogo-controlli">
+          <button id="riepilogo-mese-precedente" type="button" aria-label="Mese precedente">&lt;</button>
+          <div class="selettore-mese-riepilogo">
+            <input id="riepilogo-mese-visibile" type="text" readonly aria-hidden="true">
+            <input id="riepilogo-mese" type="month" aria-label="Mese riepilogo">
+          </div>
+          <button id="riepilogo-mese-successivo" type="button" aria-label="Mese successivo">&gt;</button>
+        </div>
+      </div>
+    </div>
+    <div class="header-toolbar tab-toolbar-dipendenti">
+      <div class="dipendenti-toolbar">
+        <div class="ordinamento">
+          <label for="selettore-ordinamento">Ordine</label>
+          <select id="selettore-ordinamento">
+            <option value="personalizzato">Personalizzato</option>
+            <option value="az">A-Z</option>
+            <option value="orario">Orario</option>
+            <option value="totale">Totale</option>
+          </select>
+          <button id="btn-salva-ordine" class="btn-salva-ordine" type="button">Salva ordine</button>
+        </div>
+        <div class="dipendenti-giorno-controlli">
+          <label for="selettore-giorno" class="sr-only">Giorno visualizzato</label>
+          <select id="selettore-giorno" aria-label="Giorno visualizzato">
+            <option value="lunedi">LUNEDÌ</option>
+            <option value="martedi">MARTEDÌ</option>
+            <option value="mercoledi">MERCOLEDÌ</option>
+            <option value="giovedi">GIOVEDÌ</option>
+            <option value="venerdi">VENERDÌ</option>
+            <option value="sabato">SABATO</option>
+            <option value="domenica">DOMENICA</option>
+          </select>
+          <button id="btn-aggiungi-tutti-giorni" class="btn-aggiungi-tutti-giorni" type="button">
+            Aggiungi a tutti i giorni
+          </button>
+        </div>
+      </div>
+    </div>
+    <div class="header-toolbar tab-toolbar-agenda">
+      <div class="agenda-toolbar">
+        <div class="agenda-ordine">
+          <label for="agenda-selettore-ordinamento">Ordine</label>
+          <select id="agenda-selettore-ordinamento">
+            <option value="personalizzato">Personalizzato</option>
+            <option value="az">A-Z</option>
+            <option value="orario">Orario</option>
+            <option value="totale">Totale</option>
+          </select>
+        </div>
+        <div class="agenda-data-controlli">
+          <div class="selettore-data-agenda">
+            <button id="agenda-giorno-precedente" class="agenda-naviga-giorno" type="button" aria-label="Giorno precedente">&lt;</button>
+            <div class="agenda-data-campo">
+              <input id="agenda-data-visibile" type="text" readonly aria-hidden="true">
+              <input id="agenda-selettore-data" type="date" aria-label="Data agenda">
+            </div>
+            <button id="agenda-giorno-successivo" class="agenda-naviga-giorno" type="button" aria-label="Giorno successivo">&gt;</button>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="header-toolbar tab-toolbar-riepilogo">
+      <div class="riepilogo-import-export">
+        <button id="btn-esporta-mese" type="button">Esporta mese</button>
+        <button id="btn-importa-mese" type="button">Importa mese</button>
+      </div>
     </div>
   </header>
 
   <nav class="tabs">
-    <button class="tab" data-tab="dipendenti">Dipendenti</button>
-    <button class="tab active" data-tab="agenda">Agenda</button>
-    <button class="tab" data-tab="riepilogo">Riepilogo</button>
+    <button class="tab" data-tab="dipendenti" aria-label="Dipendenti">
+      <img src="Dipendenti1.png" data-icon-off="Dipendenti1.png" data-icon-on="Dipendenti2.png" alt="">
+      <span>Dipendenti</span>
+    </button>
+    <button class="tab active" data-tab="agenda" aria-label="Agenda">
+      <img src="Agenda2.png" data-icon-off="Agenda1.png" data-icon-on="Agenda2.png" alt="">
+      <span>Agenda</span>
+    </button>
+    <button class="tab" data-tab="riepilogo" aria-label="Riepilogo">
+      <img src="Riepilogo1.png" data-icon-off="Riepilogo1.png" data-icon-on="Ripeilogo2.png" alt="">
+      <span>Riepilogo</span>
+    </button>
   </nav>
 
   <main>
     <section id="dipendenti" class="page" hidden>
-      <div class="ordinamento">
-        <label for="selettore-ordinamento">Ordina dipendenti:</label>
-        <select id="selettore-ordinamento">
-          <option value="personalizzato">Personalizzato</option>
-          <option value="az">A-Z</option>
-          <option value="orario">Orario</option>
-          <option value="totale">Totale</option>
-        </select>
-        <button id="btn-salva-ordine" class="btn-salva-ordine" type="button">Salva ordine</button>
-      </div>
       <table class="dip-table">
-        <thead>
-          <tr>
-            <th class="col-nome">NOME</th>
-            <th class="col-giorno">
-              <label for="selettore-giorno" class="sr-only">Giorno visualizzato</label>
-              <select id="selettore-giorno" aria-label="Giorno visualizzato">
-                <option value="lunedi">LUNEDÌ</option>
-                <option value="martedi">MARTEDÌ</option>
-                <option value="mercoledi">MERCOLEDÌ</option>
-                <option value="giovedi">GIOVEDÌ</option>
-                <option value="venerdi">VENERDÌ</option>
-                <option value="sabato">SABATO</option>
-                <option value="domenica">DOMENICA</option>
-              </select>
-              <button id="btn-aggiungi-tutti-giorni" class="btn-aggiungi-tutti-giorni" type="button">
-                Aggiungi a tutti i giorni
-              </button>
-            </th>
-            <th class="col-tot">TOT</th>
-          </tr>
-        </thead>
         <tbody id="dip-body">
           <!-- Le righe dei dipendenti vanno qui -->
         </tbody>
@@ -67,47 +119,14 @@
     </section>
 
     <section id="agenda" class="page">
-      <div class="ordinamento">
-        <label for="agenda-selettore-ordinamento">Ordina dipendenti:</label>
-        <select id="agenda-selettore-ordinamento">
-          <option value="personalizzato">Personalizzato</option>
-          <option value="az">A-Z</option>
-          <option value="orario">Orario</option>
-          <option value="totale">Totale</option>
-        </select>
-        <button id="agenda-btn-completa-giorno" class="btn-salva-ordine" type="button">Segna giorno come completato</button>
-      </div>
+      <div id="agenda-avviso-giorni" class="agenda-avviso-giorni" hidden aria-live="polite"></div>
       <table class="dip-table">
-        <thead>
-          <tr>
-            <th class="col-nome">NOME</th>
-            <th class="col-giorno">
-              <label for="agenda-selettore-data" class="sr-only">Data agenda</label>
-              <div class="selettore-data-agenda">
-                <button id="agenda-giorno-precedente" class="agenda-naviga-giorno" type="button" aria-label="Giorno precedente">&lt;</button>
-                <input id="agenda-data-visibile" type="text" readonly aria-hidden="true">
-                <input id="agenda-selettore-data" type="date" aria-label="Data agenda">
-                <button id="agenda-giorno-successivo" class="agenda-naviga-giorno" type="button" aria-label="Giorno successivo">&gt;</button>
-              </div>
-              <div id="agenda-avviso-giorni" class="agenda-avviso-giorni" hidden aria-live="polite"></div>
-            </th>
-            <th class="col-tot">TOT</th>
-          </tr>
-        </thead>
         <tbody id="agenda-body"></tbody>
       </table>
       <p class="save-status">Agenda sincronizzata con i dipendenti</p>
     </section>
 
     <section id="riepilogo" class="page" hidden>
-      <div class="riepilogo-controlli">
-        <button id="riepilogo-mese-precedente" type="button">&lt;</button>
-        <div class="selettore-mese-riepilogo">
-          <input id="riepilogo-mese-visibile" type="text" readonly aria-hidden="true">
-          <input id="riepilogo-mese" type="month" aria-label="Mese riepilogo">
-        </div>
-        <button id="riepilogo-mese-successivo" type="button">&gt;</button>
-      </div>
       <p id="riepilogo-giorni-non-completati" class="riepilogo-giorni-non-completati" hidden></p>
       <div class="riepilogo-tabella-scroll">
         <table class="riepilogo-table">
@@ -115,13 +134,13 @@
           <tbody id="riepilogo-body"></tbody>
         </table>
       </div>
-      <div class="riepilogo-import-export">
-        <button id="btn-esporta-mese" type="button">Esporta mese</button>
-        <button id="btn-importa-mese" type="button">Importa mese</button>
-        <input id="file-importa-mese" type="file" accept="application/json,.json" hidden>
-      </div>
+      <input id="file-importa-mese" type="file" accept="application/json,.json" hidden>
     </section>
   </main>
+
+  <div class="riepilogo-scroll-fisso" aria-label="Scorrimento orizzontale del calendario" tabindex="0">
+    <div class="riepilogo-scroll-fisso-contenuto"></div>
+  </div>
 
   <div id="popup-assenza" class="popup-assenza" hidden>
     <div class="popup-assenza-contenuto" role="dialog" aria-modal="true" aria-labelledby="popup-assenza-titolo">
@@ -153,6 +172,6 @@
     </div>
   </div>
 
-  <script src="app.js?v=20261011-4"></script>
+  <script src="app.js?v=20261012-21"></script>
 </body>
 </html>
